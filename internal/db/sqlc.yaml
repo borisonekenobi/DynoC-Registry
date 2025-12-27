@@ -1,0 +1,14 @@
+version: "2"
+sql:
+  - engine: postgresql
+    schema: schema
+    queries: queries
+    gen:
+      go:
+        package: db
+        out: gen
+        sql_package: pgx/v5
+        overrides:
+          - db_type: "text"
+            go_type:
+              type: "pgtype.Text"
