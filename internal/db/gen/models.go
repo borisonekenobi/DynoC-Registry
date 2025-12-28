@@ -5,8 +5,53 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type Visibility string
+
+const (
+	VisibilityPublic  Visibility = "public"
+	VisibilityPrivate Visibility = "private"
+)
+
+func (e *Visibility) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = Visibility(s)
+	case string:
+		*e = Visibility(s)
+	default:
+		return fmt.Errorf("unsupported scan type for Visibility: %T", src)
+	}
+	return nil
+}
+
+type NullVisibility struct {
+	Visibility Visibility
+	Valid      bool // Valid is true if Visibility is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullVisibility) Scan(value interface{}) error {
+	if value == nil {
+		ns.Visibility, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.Visibility.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullVisibility) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.Visibility), nil
+}
 
 type Dependency struct {
 	VersionID      pgtype.UUID
@@ -18,7 +63,7 @@ type Package struct {
 	ID          pgtype.UUID
 	Name        pgtype.Text
 	Description pgtype.Text
-	Visibility  int32
+	Visibility  Visibility
 	OwnerID     pgtype.UUID
 	CreatedAt   pgtype.Timestamptz
 	UpdatedAt   pgtype.Timestamptz
@@ -30,6 +75,7 @@ type PackageVersion struct {
 	Version   pgtype.Text
 	Checksum  pgtype.Text
 	SizeBytes int64
+	Location  pgtype.Text
 	CreatedAt pgtype.Timestamptz
 	UpdatedAt pgtype.Timestamptz
 }

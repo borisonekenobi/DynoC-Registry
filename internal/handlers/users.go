@@ -27,13 +27,13 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 
 	uRow, err := q.GetUserByUsername(r.Context(), req.Username)
 	if err == nil && uRow.ID.String() != "" {
-		writeJSON(w, http.StatusBadRequest, models.Response{Message: "username already taken"})
+		writeJSON(w, http.StatusConflict, models.Response{Message: "username already taken"})
 		return
 	}
 
 	eRow, err := q.GetUserByEmail(r.Context(), req.Email)
 	if err == nil && eRow.ID.String() != "" {
-		writeJSON(w, http.StatusBadRequest, models.Response{Message: "email already registered"})
+		writeJSON(w, http.StatusConflict, models.Response{Message: "email already registered"})
 		return
 	}
 
@@ -68,7 +68,7 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, resp)
 }
 
-func ReadAccount(w http.ResponseWriter, r *http.Request) {
+func GetAccount(w http.ResponseWriter, r *http.Request) {
 	var username pgtype.Text
 	err := username.Scan(r.PathValue("name"))
 	if err != nil {

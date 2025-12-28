@@ -12,27 +12,115 @@ import (
 )
 
 const createPackage = `-- name: CreatePackage :one
-INSERT INTO packages (id, name, description, visibility, owner_id)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, name, description, visibility, owner_id, created_at, updated_at
+INSERT INTO packages (name, description, visibility, owner_id)
+VALUES ($1, $2, $3, $4)
+RETURNING id, name, description, visibility, owner_id, created_at, updated_at, (
+    SELECT users.username
+    FROM users
+    WHERE users.id = $4
+) AS owner_username
 `
 
 type CreatePackageParams struct {
-	ID          pgtype.UUID
 	Name        pgtype.Text
 	Description pgtype.Text
-	Visibility  int32
+	Visibility  Visibility
 	OwnerID     pgtype.UUID
 }
 
-func (q *Queries) CreatePackage(ctx context.Context, arg CreatePackageParams) (Package, error) {
+type CreatePackageRow struct {
+	ID            pgtype.UUID
+	Name          pgtype.Text
+	Description   pgtype.Text
+	Visibility    Visibility
+	OwnerID       pgtype.UUID
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+	OwnerUsername pgtype.Text
+}
+
+func (q *Queries) CreatePackage(ctx context.Context, arg CreatePackageParams) (CreatePackageRow, error) {
 	row := q.db.QueryRow(ctx, createPackage,
-		arg.ID,
 		arg.Name,
 		arg.Description,
 		arg.Visibility,
 		arg.OwnerID,
 	)
+	var i CreatePackageRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Visibility,
+		&i.OwnerID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.OwnerUsername,
+	)
+	return i, err
+}
+
+const deletePackage = `-- name: DeletePackage :exec
+DELETE
+FROM packages
+WHERE id = $1
+`
+
+func (q *Queries) DeletePackage(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deletePackage, id)
+	return err
+}
+
+const findPackages = `-- name: FindPackages :many
+SELECT id, name, description, visibility, owner_id, created_at, updated_at
+FROM packages
+WHERE name ILIKE '%' || $1 || '%'
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type FindPackagesParams struct {
+	Column1 pgtype.Text
+	Limit   int32
+	Offset  int32
+}
+
+func (q *Queries) FindPackages(ctx context.Context, arg FindPackagesParams) ([]Package, error) {
+	rows, err := q.db.Query(ctx, findPackages, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Package
+	for rows.Next() {
+		var i Package
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Visibility,
+			&i.OwnerID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getPackageByID = `-- name: GetPackageByID :one
+SELECT id, name, description, visibility, owner_id, created_at, updated_at
+FROM packages
+WHERE id = $1
+`
+
+func (q *Queries) GetPackageByID(ctx context.Context, id pgtype.UUID) (Package, error) {
+	row := q.db.QueryRow(ctx, getPackageByID, id)
 	var i Package
 	err := row.Scan(
 		&i.ID,
@@ -65,4 +153,30 @@ func (q *Queries) GetPackageByName(ctx context.Context, name pgtype.Text) (Packa
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const updatePackage = `-- name: UpdatePackage :exec
+UPDATE packages
+SET name        = COALESCE($2, name),
+    description = COALESCE($3, description),
+    visibility  = COALESCE($4, visibility),
+    updated_at  = NOW()
+WHERE id = $1
+`
+
+type UpdatePackageParams struct {
+	ID          pgtype.UUID
+	Name        pgtype.Text
+	Description pgtype.Text
+	Visibility  Visibility
+}
+
+func (q *Queries) UpdatePackage(ctx context.Context, arg UpdatePackageParams) error {
+	_, err := q.db.Exec(ctx, updatePackage,
+		arg.ID,
+		arg.Name,
+		arg.Description,
+		arg.Visibility,
+	)
+	return err
 }

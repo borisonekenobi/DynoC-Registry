@@ -11,27 +11,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createVersion = `-- name: CreateVersion :one
-INSERT INTO package_versions (id, package_id, version, checksum, size_bytes)
+const createPackageVersion = `-- name: CreatePackageVersion :one
+INSERT INTO package_versions (package_id, version, checksum, size_bytes, location)
 VALUES ($1, $2, $3, $4, $5)
-RETURNING id, package_id, version, checksum, size_bytes, created_at, updated_at
+RETURNING id, package_id, version, checksum, size_bytes, location, created_at, updated_at
 `
 
-type CreateVersionParams struct {
-	ID        pgtype.UUID
+type CreatePackageVersionParams struct {
 	PackageID pgtype.UUID
 	Version   pgtype.Text
 	Checksum  pgtype.Text
 	SizeBytes int64
+	Location  pgtype.Text
 }
 
-func (q *Queries) CreateVersion(ctx context.Context, arg CreateVersionParams) (PackageVersion, error) {
-	row := q.db.QueryRow(ctx, createVersion,
-		arg.ID,
+func (q *Queries) CreatePackageVersion(ctx context.Context, arg CreatePackageVersionParams) (PackageVersion, error) {
+	row := q.db.QueryRow(ctx, createPackageVersion,
 		arg.PackageID,
 		arg.Version,
 		arg.Checksum,
 		arg.SizeBytes,
+		arg.Location,
 	)
 	var i PackageVersion
 	err := row.Scan(
@@ -40,58 +40,227 @@ func (q *Queries) CreateVersion(ctx context.Context, arg CreateVersionParams) (P
 		&i.Version,
 		&i.Checksum,
 		&i.SizeBytes,
+		&i.Location,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const getLatestVersion = `-- name: GetLatestVersion :one
-SELECT id, package_id, version, checksum, size_bytes, created_at, updated_at
+const deletePackageVersion = `-- name: DeletePackageVersion :exec
+DELETE
 FROM package_versions
-WHERE package_id = $1
-ORDER BY created_at DESC
-LIMIT 1
+WHERE id = $1
 `
 
-func (q *Queries) GetLatestVersion(ctx context.Context, packageID pgtype.UUID) (PackageVersion, error) {
-	row := q.db.QueryRow(ctx, getLatestVersion, packageID)
-	var i PackageVersion
-	err := row.Scan(
-		&i.ID,
-		&i.PackageID,
-		&i.Version,
-		&i.Checksum,
-		&i.SizeBytes,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+func (q *Queries) DeletePackageVersion(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deletePackageVersion, id)
+	return err
 }
 
-const listVersions = `-- name: ListVersions :many
-SELECT version
-FROM package_versions
-WHERE package_id = $1
-ORDER BY created_at DESC
+const getAllPackageVersions = `-- name: GetAllPackageVersions :many
+SELECT package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
+FROM package_versions package_version
+         JOIN packages package ON package_version.package_id = package.id
+WHERE package.name = $1
+ORDER BY package_version.created_at DESC
 `
 
-func (q *Queries) ListVersions(ctx context.Context, packageID pgtype.UUID) ([]pgtype.Text, error) {
-	rows, err := q.db.Query(ctx, listVersions, packageID)
+func (q *Queries) GetAllPackageVersions(ctx context.Context, name pgtype.Text) ([]PackageVersion, error) {
+	rows, err := q.db.Query(ctx, getAllPackageVersions, name)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []pgtype.Text
+	var items []PackageVersion
 	for rows.Next() {
-		var version pgtype.Text
-		if err := rows.Scan(&version); err != nil {
+		var i PackageVersion
+		if err := rows.Scan(
+			&i.ID,
+			&i.PackageID,
+			&i.Version,
+			&i.Checksum,
+			&i.SizeBytes,
+			&i.Location,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
 			return nil, err
 		}
-		items = append(items, version)
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getLatestPackageVersion = `-- name: GetLatestPackageVersion :one
+SELECT package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
+FROM package_versions package_version
+         JOIN packages package ON package_version.package_id = package.id
+WHERE package.name = $1
+ORDER BY package_version.created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestPackageVersion(ctx context.Context, name pgtype.Text) (PackageVersion, error) {
+	row := q.db.QueryRow(ctx, getLatestPackageVersion, name)
+	var i PackageVersion
+	err := row.Scan(
+		&i.ID,
+		&i.PackageID,
+		&i.Version,
+		&i.Checksum,
+		&i.SizeBytes,
+		&i.Location,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPackageByVersion = `-- name: GetPackageByVersion :one
+SELECT package.id, package.name, package.description, package.visibility, package.owner_id, package.created_at, package.updated_at, package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
+FROM packages package
+         JOIN package_versions package_version ON package_version.package_id = package.id
+WHERE package.name = $1 AND package_version.version = $2
+`
+
+type GetPackageByVersionParams struct {
+	Name    pgtype.Text
+	Version pgtype.Text
+}
+
+type GetPackageByVersionRow struct {
+	ID          pgtype.UUID
+	Name        pgtype.Text
+	Description pgtype.Text
+	Visibility  Visibility
+	OwnerID     pgtype.UUID
+	CreatedAt   pgtype.Timestamptz
+	UpdatedAt   pgtype.Timestamptz
+	ID_2        pgtype.UUID
+	PackageID   pgtype.UUID
+	Version     pgtype.Text
+	Checksum    pgtype.Text
+	SizeBytes   int64
+	Location    pgtype.Text
+	CreatedAt_2 pgtype.Timestamptz
+	UpdatedAt_2 pgtype.Timestamptz
+}
+
+func (q *Queries) GetPackageByVersion(ctx context.Context, arg GetPackageByVersionParams) (GetPackageByVersionRow, error) {
+	row := q.db.QueryRow(ctx, getPackageByVersion, arg.Name, arg.Version)
+	var i GetPackageByVersionRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Visibility,
+		&i.OwnerID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ID_2,
+		&i.PackageID,
+		&i.Version,
+		&i.Checksum,
+		&i.SizeBytes,
+		&i.Location,
+		&i.CreatedAt_2,
+		&i.UpdatedAt_2,
+	)
+	return i, err
+}
+
+const getPackageVersionByID = `-- name: GetPackageVersionByID :one
+SELECT id, package_id, version, checksum, size_bytes, location, created_at, updated_at
+FROM package_versions
+WHERE id = $1
+`
+
+func (q *Queries) GetPackageVersionByID(ctx context.Context, id pgtype.UUID) (PackageVersion, error) {
+	row := q.db.QueryRow(ctx, getPackageVersionByID, id)
+	var i PackageVersion
+	err := row.Scan(
+		&i.ID,
+		&i.PackageID,
+		&i.Version,
+		&i.Checksum,
+		&i.SizeBytes,
+		&i.Location,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getPackageVersionsByName = `-- name: GetPackageVersionsByName :many
+SELECT package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
+FROM package_versions package_version
+         JOIN packages package ON package_version.package_id = package.id
+WHERE package.name = $1
+ORDER BY package_version.created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type GetPackageVersionsByNameParams struct {
+	Name   pgtype.Text
+	Limit  int32
+	Offset int32
+}
+
+func (q *Queries) GetPackageVersionsByName(ctx context.Context, arg GetPackageVersionsByNameParams) ([]PackageVersion, error) {
+	rows, err := q.db.Query(ctx, getPackageVersionsByName, arg.Name, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PackageVersion
+	for rows.Next() {
+		var i PackageVersion
+		if err := rows.Scan(
+			&i.ID,
+			&i.PackageID,
+			&i.Version,
+			&i.Checksum,
+			&i.SizeBytes,
+			&i.Location,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updatePackageVersion = `-- name: UpdatePackageVersion :exec
+UPDATE package_versions
+SET checksum   = COALESCE($2, checksum),
+    size_bytes = COALESCE($3, size_bytes),
+    location   = COALESCE($4, location),
+    updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdatePackageVersionParams struct {
+	ID        pgtype.UUID
+	Checksum  pgtype.Text
+	SizeBytes int64
+	Location  pgtype.Text
+}
+
+func (q *Queries) UpdatePackageVersion(ctx context.Context, arg UpdatePackageVersionParams) error {
+	_, err := q.db.Exec(ctx, updatePackageVersion,
+		arg.ID,
+		arg.Checksum,
+		arg.SizeBytes,
+		arg.Location,
+	)
+	return err
 }

@@ -1,41 +1,42 @@
 package models
 
-import "time"
+import (
+	db "dynoc-registry/internal/db/gen"
+
+	"github.com/jackc/pgx/v5/pgtype"
+)
 
 type CreatePackageRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Visibility  string `json:"visibility"`
+	Name        pgtype.Text   `json:"name"`
+	Description pgtype.Text   `json:"description"`
+	Visibility  db.Visibility `json:"visibility"`
 }
 
 type PackageResponse struct {
-	Name      string    `json:"name"`
-	Owner     string    `json:"owner"`
-	CreatedAt time.Time `json:"created_at"`
+	ID          pgtype.UUID        `json:"id"`
+	Name        pgtype.Text        `json:"name"`
+	Description pgtype.Text        `json:"description"`
+	Visibility  db.Visibility      `json:"visibility"`
+	Owner       pgtype.Text        `json:"owner"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type VersionMetadata struct {
-	Version      string            `json:"version"`
-	Dependencies map[string]string `json:"dependencies"`
+	Version      pgtype.Text                 `json:"version"`
+	Dependencies map[pgtype.Text]pgtype.Text `json:"dependencies"`
 }
 
 type VersionResponse struct {
-	Name         string            `json:"name"`
-	Version      string            `json:"version"`
-	Checksum     string            `json:"checksum"`
-	Size         int64             `json:"size"`
-	Dependencies map[string]string `json:"dependencies"`
-	DownloadURL  string            `json:"download_url"`
+	Name         pgtype.Text                 `json:"name"`
+	Version      pgtype.Text                 `json:"version"`
+	Checksum     pgtype.Text                 `json:"checksum"`
+	Size         pgtype.Int8                 `json:"size"`
+	Dependencies map[pgtype.Text]pgtype.Text `json:"dependencies"`
+	DownloadURL  pgtype.Text                 `json:"download_url"`
 }
 
 type VersionsListResponse struct {
-	Name     string   `json:"name"`
-	Versions []string `json:"versions"`
+	Name     pgtype.Text   `json:"name"`
+	Versions []pgtype.Text `json:"versions"`
 }
-
-type Visibility int
-
-const (
-	VisibilityPublic Visibility = iota
-	VisibilityPrivate
-)

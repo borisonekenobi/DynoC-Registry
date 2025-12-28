@@ -1,27 +1,72 @@
 package handlers
 
 import (
+	db "dynoc-registry/internal/db/gen"
+	"dynoc-registry/internal/jwt"
 	"dynoc-registry/internal/models"
+	"encoding/json"
 	"net/http"
 )
 
 func CreatePackage(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusNotImplemented, models.NotImplementedError)
+	token := r.Header.Get("Authorization")
+	if token == "" {
+		writeJSON(w, http.StatusUnauthorized, models.UnauthorizedError)
+		return
+	}
+
+	userId, err := jwt.GetTokenClaims(token)
+	if err != nil {
+		writeJSON(w, http.StatusUnauthorized, models.UnauthorizedError)
+		return
+	}
+
+	var req models.CreatePackageRequest
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, models.BadRequestError)
+		return
+	}
+
+	pool := getDB(r)
+	q := db.New(pool)
+
+	row, err := q.CreatePackage(r.Context(), db.CreatePackageParams{
+		Name:        req.Name,
+		Description: req.Description,
+		Visibility:  req.Visibility,
+		OwnerID:     userId,
+	})
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, models.BadRequestError)
+		return
+	}
+
+	resp := models.PackageResponse{
+		ID:          row.ID,
+		Name:        row.Name,
+		Description: row.Description,
+		Visibility:  row.Visibility,
+		Owner:       row.OwnerUsername,
+		CreatedAt:   row.CreatedAt,
+		UpdatedAt:   row.UpdatedAt,
+	}
+
+	writeJSON(w, http.StatusCreated, resp)
 }
 
 func CreatePackageVersion(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusNotImplemented, models.NotImplementedError)
 }
 
-func ReadLatest(w http.ResponseWriter, r *http.Request) {
+func GetLatest(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusNotImplemented, models.NotImplementedError)
 }
 
-func ReadVersions(w http.ResponseWriter, r *http.Request) {
+func GetVersions(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusNotImplemented, models.NotImplementedError)
 }
 
-func ReadPackage(w http.ResponseWriter, r *http.Request) {
+func GetPackage(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusNotImplemented, models.NotImplementedError)
 }
 

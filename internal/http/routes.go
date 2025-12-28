@@ -14,7 +14,7 @@ func registerRoutes(r chi.Router) {
 
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/register", handlers.CreateAccount)
-		r.Get("/{name}", handlers.ReadAccount)
+		r.Get("/{name}", handlers.GetAccount)
 		r.Put("/{name}", handlers.UpdateAccount)
 		r.Delete("/{name}", handlers.DeleteAccount)
 	})
@@ -23,9 +23,10 @@ func registerRoutes(r chi.Router) {
 		r.Post("/", handlers.CreatePackage)
 		r.Post("/{name}/versions", handlers.CreatePackageVersion)
 
-		r.Get("/{name}/latest", handlers.ReadLatest)
-		r.Get("/{name}/versions", handlers.ReadVersions)
-		r.Get("/{name}/{version}", handlers.ReadPackage)
+		r.Get("/{name}/latest", handlers.GetLatest)
+		r.Get("/{name}/versions", handlers.GetVersions)
+		r.Get("/{name}/{version}", handlers.GetPackage)
+		r.Get("/search", handlers.FindPackages)
 
 		r.Put("/{name}", handlers.UpdatePackage)
 		r.Put("/{name}/versions/{version}", handlers.UpdatePackageVersion)
@@ -33,6 +34,4 @@ func registerRoutes(r chi.Router) {
 		r.Delete("/{name}", handlers.DeletePackage)
 		r.Delete("/{name}/versions/{version}", handlers.DeletePackageVersion)
 	})
-
-	r.Get("/search", handlers.FindPackages)
 }
