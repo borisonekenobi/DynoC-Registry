@@ -1,3 +1,6 @@
+CREATE EXTENSION IF NOT EXISTS system_stats;
+CREATE EXTENSION IF NOT EXISTS citext;
+
 DROP TYPE IF EXISTS VISIBILITY CASCADE;
 CREATE TYPE VISIBILITY AS ENUM ('public', 'private');
 
@@ -5,8 +8,8 @@ DROP TABLE IF EXISTS users CASCADE;
 CREATE TABLE users
 (
     id         UUID        NOT NULL DEFAULT GEN_RANDOM_UUID(),
-    username   TEXT        NOT NULL,
-    email      TEXT        NOT NULL,
+    username   CITEXT      NOT NULL,
+    email      CITEXT      NOT NULL,
     password   TEXT        NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"dynoc-registry/internal/commons"
 	db "dynoc-registry/internal/db/gen"
 	"dynoc-registry/internal/models"
 	"net/http"
@@ -24,7 +25,7 @@ func FindPackages(w http.ResponseWriter, r *http.Request) {
 	if skipParam != "" {
 		i, err := strconv.ParseInt(skipParam, 10, 64)
 		if err != nil || i < 0 {
-			writeJSON(w, http.StatusBadRequest, models.BadRequestError)
+			commons.WriteJSON(w, http.StatusBadRequest, models.BadRequestError)
 			return
 		}
 		skip = int32(i)
@@ -35,13 +36,13 @@ func FindPackages(w http.ResponseWriter, r *http.Request) {
 	if takeParam != "" {
 		i, err := strconv.ParseInt(takeParam, 10, 32)
 		if err != nil || i < 0 {
-			writeJSON(w, http.StatusBadRequest, models.BadRequestError)
+			commons.WriteJSON(w, http.StatusBadRequest, models.BadRequestError)
 			return
 		}
 		take = int32(i)
 	}
 
-	pool := getDB(r)
+	pool := commons.GetDB(r)
 	q := db.New(pool)
 
 	rows, err := q.FindPackages(r.Context(), db.FindPackagesParams{
@@ -50,9 +51,9 @@ func FindPackages(w http.ResponseWriter, r *http.Request) {
 		Offset:  skip,
 	})
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, models.InternalServerError)
+		commons.WriteJSON(w, http.StatusInternalServerError, models.InternalServerError)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, rows)
+	commons.WriteJSON(w, http.StatusOK, rows)
 }

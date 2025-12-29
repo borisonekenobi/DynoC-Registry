@@ -3,6 +3,8 @@ package http
 import (
 	"context"
 	"dynoc-registry/internal/db"
+	"dynoc-registry/internal/models"
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -29,6 +31,15 @@ func NewServer() http.Handler {
 			ctx = context.WithValue(r.Context(), "db", pool)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
+	})
+
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		err = json.NewEncoder(w).Encode(models.NotFoundError)
+		if err != nil {
+			panic(err)
+		}
 	})
 
 	registerRoutes(r)

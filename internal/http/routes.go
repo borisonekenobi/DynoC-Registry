@@ -23,10 +23,10 @@ func registerRoutes(r chi.Router) {
 		r.Post("/", handlers.CreatePackage)
 		r.Post("/{name}/versions", handlers.CreatePackageVersion)
 
+		r.Get("/search", handlers.FindPackages)
 		r.Get("/{name}/latest", handlers.GetLatest)
 		r.Get("/{name}/versions", handlers.GetVersions)
 		r.Get("/{name}/{version}", handlers.GetPackage)
-		r.Get("/search", handlers.FindPackages)
 
 		r.Put("/{name}", handlers.UpdatePackage)
 		r.Put("/{name}/versions/{version}", handlers.UpdatePackageVersion)

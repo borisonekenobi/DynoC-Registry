@@ -12,3 +12,11 @@ sql:
           - db_type: "text"
             go_type:
               type: "pgtype.Text"
+
+          - db_type: "citext"
+            go_type:
+              type: "pgtype.Text"
+
+          - db_type: "pg_catalog.int8"
+            go_type:
+              type: "pgtype.Int8"

@@ -21,7 +21,7 @@ type CreatePackageVersionParams struct {
 	PackageID pgtype.UUID
 	Version   pgtype.Text
 	Checksum  pgtype.Text
-	SizeBytes int64
+	SizeBytes pgtype.Int8
 	Location  pgtype.Text
 }
 
@@ -144,7 +144,7 @@ type GetPackageByVersionRow struct {
 	PackageID   pgtype.UUID
 	Version     pgtype.Text
 	Checksum    pgtype.Text
-	SizeBytes   int64
+	SizeBytes   pgtype.Int8
 	Location    pgtype.Text
 	CreatedAt_2 pgtype.Timestamptz
 	UpdatedAt_2 pgtype.Timestamptz
@@ -251,7 +251,7 @@ WHERE id = $1
 type UpdatePackageVersionParams struct {
 	ID        pgtype.UUID
 	Checksum  pgtype.Text
-	SizeBytes int64
+	SizeBytes pgtype.Int8
 	Location  pgtype.Text
 }
 
