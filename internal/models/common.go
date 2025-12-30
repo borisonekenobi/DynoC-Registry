@@ -2,7 +2,7 @@ package models
 
 var SuccessResponse = Response{Message: "success"}                   // 200
 var CreatedResponse = Response{Message: "created"}                   // 201
-var BadRequestError = Response{Message: "invalid request"}           // 400
+var BadRequestError = Response{Message: "bad request"}               // 400
 var MissingFieldError = Response{Message: "missing required fields"} // 400
 var UnauthorizedError = Response{Message: "unauthorized"}            // 401
 var ForbiddenError = Response{Message: "forbidden"}                  // 403

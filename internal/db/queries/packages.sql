@@ -1,11 +1,9 @@
 -- name: CreatePackage :one
 INSERT INTO packages (name, description, visibility, owner_id)
 VALUES ($1, $2, $3, $4)
-RETURNING *, (
-    SELECT users.username
-    FROM users
-    WHERE users.id = $4
-) AS owner_username;
+RETURNING *, (SELECT users.username
+              FROM users
+              WHERE users.id = $4) AS owner_username;
 
 -- name: GetPackageByID :one
 SELECT *
@@ -18,10 +16,11 @@ FROM packages
 WHERE name = $1;
 
 -- name: FindPackages :many
-SELECT *
-FROM packages
+SELECT package.*, usr.username AS owner_username
+FROM packages package
+JOIN users    usr ON package.owner_id = usr.id
 WHERE name ILIKE '%' || $1 || '%'
-ORDER BY created_at DESC
+ORDER BY package.created_at DESC
 LIMIT $2 OFFSET $3;
 
 -- name: UpdatePackage :exec

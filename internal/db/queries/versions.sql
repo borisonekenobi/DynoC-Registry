@@ -11,23 +11,24 @@ WHERE id = $1;
 -- name: GetAllPackageVersions :many
 SELECT package_version.*
 FROM package_versions package_version
-         JOIN packages package ON package_version.package_id = package.id
+JOIN packages         package ON package_version.package_id = package.id
 WHERE package.name = $1
 ORDER BY package_version.created_at DESC;
 
 -- name: GetPackageVersionsByName :many
 SELECT package_version.*
 FROM package_versions package_version
-         JOIN packages package ON package_version.package_id = package.id
+JOIN packages         package ON package_version.package_id = package.id
 WHERE package.name = $1
 ORDER BY package_version.created_at DESC
 LIMIT $2 OFFSET $3;
 
 -- name: GetPackageByVersion :one
 SELECT package.*, package_version.*
-FROM packages package
-         JOIN package_versions package_version ON package_version.package_id = package.id
-WHERE package.name = $1 AND package_version.version = $2;
+FROM packages         package
+JOIN package_versions package_version ON package_version.package_id = package.id
+WHERE package.name = $1
+  AND package_version.version = $2;
 
 -- name: UpdatePackageVersion :exec
 UPDATE package_versions
@@ -45,7 +46,7 @@ WHERE id = $1;
 -- name: GetLatestPackageVersion :one
 SELECT package_version.*
 FROM package_versions package_version
-         JOIN packages package ON package_version.package_id = package.id
+JOIN packages         package ON package_version.package_id = package.id
 WHERE package.name = $1
 ORDER BY package_version.created_at DESC
 LIMIT 1;

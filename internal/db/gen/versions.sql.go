@@ -61,7 +61,7 @@ func (q *Queries) DeletePackageVersion(ctx context.Context, id pgtype.UUID) erro
 const getAllPackageVersions = `-- name: GetAllPackageVersions :many
 SELECT package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
 FROM package_versions package_version
-         JOIN packages package ON package_version.package_id = package.id
+JOIN packages         package ON package_version.package_id = package.id
 WHERE package.name = $1
 ORDER BY package_version.created_at DESC
 `
@@ -98,7 +98,7 @@ func (q *Queries) GetAllPackageVersions(ctx context.Context, name pgtype.Text) (
 const getLatestPackageVersion = `-- name: GetLatestPackageVersion :one
 SELECT package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
 FROM package_versions package_version
-         JOIN packages package ON package_version.package_id = package.id
+JOIN packages         package ON package_version.package_id = package.id
 WHERE package.name = $1
 ORDER BY package_version.created_at DESC
 LIMIT 1
@@ -122,9 +122,10 @@ func (q *Queries) GetLatestPackageVersion(ctx context.Context, name pgtype.Text)
 
 const getPackageByVersion = `-- name: GetPackageByVersion :one
 SELECT package.id, package.name, package.description, package.visibility, package.owner_id, package.created_at, package.updated_at, package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
-FROM packages package
-         JOIN package_versions package_version ON package_version.package_id = package.id
-WHERE package.name = $1 AND package_version.version = $2
+FROM packages         package
+JOIN package_versions package_version ON package_version.package_id = package.id
+WHERE package.name = $1
+  AND package_version.version = $2
 `
 
 type GetPackageByVersionParams struct {
@@ -198,7 +199,7 @@ func (q *Queries) GetPackageVersionByID(ctx context.Context, id pgtype.UUID) (Pa
 const getPackageVersionsByName = `-- name: GetPackageVersionsByName :many
 SELECT package_version.id, package_version.package_id, package_version.version, package_version.checksum, package_version.size_bytes, package_version.location, package_version.created_at, package_version.updated_at
 FROM package_versions package_version
-         JOIN packages package ON package_version.package_id = package.id
+JOIN packages         package ON package_version.package_id = package.id
 WHERE package.name = $1
 ORDER BY package_version.created_at DESC
 LIMIT $2 OFFSET $3

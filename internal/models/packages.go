@@ -23,17 +23,18 @@ type PackageResponse struct {
 }
 
 type VersionMetadata struct {
-	Version      pgtype.Text                 `json:"version"`
-	Dependencies map[pgtype.Text]pgtype.Text `json:"dependencies"`
+	PackageID    pgtype.UUID            `json:"package_id"`
+	Version      pgtype.Text            `json:"version"`
+	Dependencies map[string]pgtype.Text `json:"dependencies"`
 }
 
 type VersionResponse struct {
-	Name         pgtype.Text                 `json:"name"`
-	Version      pgtype.Text                 `json:"version"`
-	Checksum     pgtype.Text                 `json:"checksum"`
-	Size         pgtype.Int8                 `json:"size"`
-	Dependencies map[pgtype.Text]pgtype.Text `json:"dependencies"`
-	DownloadURL  pgtype.Text                 `json:"download_url"`
+	Name         pgtype.Text            `json:"name"`
+	Version      pgtype.Text            `json:"version"`
+	Checksum     pgtype.Text            `json:"checksum"`
+	Size         pgtype.Int8            `json:"size"`
+	Dependencies map[string]pgtype.Text `json:"dependencies"`
+	DownloadURL  pgtype.Text            `json:"download_url"`
 }
 
 type VersionsListResponse struct {

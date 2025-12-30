@@ -14,11 +14,9 @@ import (
 const createPackage = `-- name: CreatePackage :one
 INSERT INTO packages (name, description, visibility, owner_id)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, description, visibility, owner_id, created_at, updated_at, (
-    SELECT users.username
-    FROM users
-    WHERE users.id = $4
-) AS owner_username
+RETURNING id, name, description, visibility, owner_id, created_at, updated_at, (SELECT users.username
+              FROM users
+              WHERE users.id = $4) AS owner_username
 `
 
 type CreatePackageParams struct {
@@ -72,10 +70,11 @@ func (q *Queries) DeletePackage(ctx context.Context, id pgtype.UUID) error {
 }
 
 const findPackages = `-- name: FindPackages :many
-SELECT id, name, description, visibility, owner_id, created_at, updated_at
-FROM packages
+SELECT package.id, package.name, package.description, package.visibility, package.owner_id, package.created_at, package.updated_at, usr.username AS owner_username
+FROM packages package
+JOIN users    usr ON package.owner_id = usr.id
 WHERE name ILIKE '%' || $1 || '%'
-ORDER BY created_at DESC
+ORDER BY package.created_at DESC
 LIMIT $2 OFFSET $3
 `
 
@@ -85,15 +84,26 @@ type FindPackagesParams struct {
 	Offset  int32
 }
 
-func (q *Queries) FindPackages(ctx context.Context, arg FindPackagesParams) ([]Package, error) {
+type FindPackagesRow struct {
+	ID            pgtype.UUID
+	Name          pgtype.Text
+	Description   pgtype.Text
+	Visibility    Visibility
+	OwnerID       pgtype.UUID
+	CreatedAt     pgtype.Timestamptz
+	UpdatedAt     pgtype.Timestamptz
+	OwnerUsername pgtype.Text
+}
+
+func (q *Queries) FindPackages(ctx context.Context, arg FindPackagesParams) ([]FindPackagesRow, error) {
 	rows, err := q.db.Query(ctx, findPackages, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Package
+	var items []FindPackagesRow
 	for rows.Next() {
-		var i Package
+		var i FindPackagesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -102,6 +112,7 @@ func (q *Queries) FindPackages(ctx context.Context, arg FindPackagesParams) ([]P
 			&i.OwnerID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OwnerUsername,
 		); err != nil {
 			return nil, err
 		}

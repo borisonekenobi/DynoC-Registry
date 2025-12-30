@@ -55,5 +55,18 @@ func FindPackages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	commons.WriteJSON(w, http.StatusOK, rows)
+	resp := make([]models.PackageResponse, len(rows))
+	for i, row := range rows {
+		resp[i] = models.PackageResponse{
+			ID:          row.ID,
+			Name:        row.Name,
+			Description: row.Description,
+			Visibility:  row.Visibility,
+			Owner:       row.OwnerUsername,
+			CreatedAt:   row.CreatedAt,
+			UpdatedAt:   row.UpdatedAt,
+		}
+	}
+
+	commons.WriteJSON(w, http.StatusOK, resp)
 }
