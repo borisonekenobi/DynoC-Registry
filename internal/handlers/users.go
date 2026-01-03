@@ -27,14 +27,22 @@ func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	q := db.New(pool)
 
 	uRow, err := q.GetUserByUsername(r.Context(), req.Username)
-	if err == nil && uRow.ID.String() != "" {
+	if err == nil && uRow.UserID.String() != "" {
 		commons.WriteJSON(w, http.StatusConflict, models.Response{Message: "username already taken"})
+		return
+	}
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		commons.WriteJSON(w, http.StatusInternalServerError, models.InternalServerError)
 		return
 	}
 
 	eRow, err := q.GetUserByEmail(r.Context(), req.Email)
-	if err == nil && eRow.ID.String() != "" {
+	if err == nil && eRow.UserID.String() != "" {
 		commons.WriteJSON(w, http.StatusConflict, models.Response{Message: "email already registered"})
+		return
+	}
+	if err != nil && err.Error() != "sql: no rows in result set" {
+		commons.WriteJSON(w, http.StatusInternalServerError, models.InternalServerError)
 		return
 	}
 
@@ -81,17 +89,21 @@ func GetAccount(w http.ResponseWriter, r *http.Request) {
 	q := db.New(pool)
 
 	row, err := q.GetUserByUsername(r.Context(), username)
-	if err != nil || row.ID.String() == "" {
-		commons.WriteJSON(w, http.StatusNotFound, models.NotFoundError)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			commons.WriteJSON(w, http.StatusNotFound, models.NotFoundError)
+			return
+		}
+		commons.WriteJSON(w, http.StatusInternalServerError, models.InternalServerError)
 		return
 	}
 
 	resp := models.AccountResponse{
-		UserID:    row.ID,
-		Username:  row.Username,
-		Email:     row.Email,
-		CreatedAt: row.CreatedAt,
-		UpdatedAt: row.UpdatedAt,
+		UserID:    row.UserID,
+		Username:  row.UserName,
+		Email:     row.UserEmail,
+		CreatedAt: row.UserCreatedAt,
+		UpdatedAt: row.UserUpdatedAt,
 	}
 
 	commons.WriteJSON(w, http.StatusOK, resp)
@@ -105,6 +117,7 @@ func UpdateAccount(w http.ResponseWriter, r *http.Request) {
 
 	userId, err := jwt.GetTokenClaims(token)
 	if err != nil {
+		commons.WriteJSON(w, http.StatusUnauthorized, models.UnauthorizedError)
 		return
 	}
 
@@ -124,7 +137,7 @@ func UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	updateUsername := r.PathValue("name")
-	if user.ID != userId || user.Username.String != updateUsername {
+	if user.UserID != userId || user.UserName.String != updateUsername {
 		commons.WriteJSON(w, http.StatusForbidden, models.ForbiddenError)
 		return
 	}
@@ -166,6 +179,7 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	userId, err := jwt.GetTokenClaims(token)
 	if err != nil {
+		commons.WriteJSON(w, http.StatusUnauthorized, models.UnauthorizedError)
 		return
 	}
 
@@ -179,7 +193,7 @@ func DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deleteUsername := r.PathValue("name")
-	if user.ID != userId || user.Username.String != deleteUsername {
+	if user.UserID != userId || user.UserName.String != deleteUsername {
 		commons.WriteJSON(w, http.StatusForbidden, models.ForbiddenError)
 		return
 	}

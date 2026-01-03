@@ -38,14 +38,14 @@ CREATE TABLE packages
 DROP TABLE IF EXISTS package_versions CASCADE;
 CREATE TABLE package_versions
 (
-    id                  UUID        NOT NULL DEFAULT GEN_RANDOM_UUID(),
-    package_id          UUID        NOT NULL,
-    version             TEXT        NOT NULL,
-    checksum            TEXT        NOT NULL,
-    size_bytes          BIGINT      NOT NULL,
-    location            TEXT        NOT NULL,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    id         UUID        NOT NULL DEFAULT GEN_RANDOM_UUID(),
+    package_id UUID        NOT NULL,
+    version    TEXT        NOT NULL,
+    checksum   TEXT        NOT NULL,
+    size_bytes BIGINT      NOT NULL,
+    location   TEXT        NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
     CONSTRAINT pk_package_version_id PRIMARY KEY (id),
     CONSTRAINT fk_package_id FOREIGN KEY (package_id) REFERENCES packages (id),
@@ -56,9 +56,9 @@ DROP TABLE IF EXISTS dependencies CASCADE;
 CREATE TABLE dependencies
 (
     version_id      UUID NOT NULL,
-    dependency_name TEXT NOT NULL,
+    name            TEXT NOT NULL,
     constraint_expr TEXT NOT NULL,
 
-    CONSTRAINT pk_dependency PRIMARY KEY (version_id, dependency_name),
+    CONSTRAINT pk_dependency PRIMARY KEY (version_id, name),
     CONSTRAINT fk_dependency_version FOREIGN KEY (version_id) REFERENCES package_versions (id)
 );

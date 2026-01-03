@@ -12,18 +12,18 @@ import (
 )
 
 const createDependency = `-- name: CreateDependency :exec
-INSERT INTO dependencies (version_id, dependency_name, constraint_expr)
+INSERT INTO dependencies (version_id, name, constraint_expr)
 VALUES ($1, $2, $3)
 `
 
 type CreateDependencyParams struct {
 	VersionID      pgtype.UUID
-	DependencyName pgtype.Text
+	Name           pgtype.Text
 	ConstraintExpr pgtype.Text
 }
 
 func (q *Queries) CreateDependency(ctx context.Context, arg CreateDependencyParams) error {
-	_, err := q.db.Exec(ctx, createDependency, arg.VersionID, arg.DependencyName, arg.ConstraintExpr)
+	_, err := q.db.Exec(ctx, createDependency, arg.VersionID, arg.Name, arg.ConstraintExpr)
 	return err
 }
 
@@ -39,8 +39,9 @@ func (q *Queries) DeleteDependenciesByVersionID(ctx context.Context, versionID p
 }
 
 const getDependenciesByVersionID = `-- name: GetDependenciesByVersionID :many
-SELECT dependency_name, constraint_expr
-FROM dependencies
+SELECT dependency.name            AS dependency_name,
+       dependency.constraint_expr AS constraint_expr
+FROM dependencies dependency
 WHERE version_id = $1
 `
 

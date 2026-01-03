@@ -55,7 +55,7 @@ func (ns NullVisibility) Value() (driver.Value, error) {
 
 type Dependency struct {
 	VersionID      pgtype.UUID
-	DependencyName pgtype.Text
+	Name           pgtype.Text
 	ConstraintExpr pgtype.Text
 }
 

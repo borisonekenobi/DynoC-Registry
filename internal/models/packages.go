@@ -13,7 +13,6 @@ type CreatePackageRequest struct {
 }
 
 type PackageResponse struct {
-	ID          pgtype.UUID        `json:"id"`
 	Name        pgtype.Text        `json:"name"`
 	Description pgtype.Text        `json:"description"`
 	Visibility  db.Visibility      `json:"visibility"`
@@ -23,7 +22,6 @@ type PackageResponse struct {
 }
 
 type VersionMetadata struct {
-	PackageID    pgtype.UUID            `json:"package_id"`
 	Version      pgtype.Text            `json:"version"`
 	Dependencies map[string]pgtype.Text `json:"dependencies"`
 }

@@ -70,7 +70,13 @@ func (q *Queries) DeletePackage(ctx context.Context, id pgtype.UUID) error {
 }
 
 const findPackages = `-- name: FindPackages :many
-SELECT package.id, package.name, package.description, package.visibility, package.owner_id, package.created_at, package.updated_at, usr.username AS owner_username
+SELECT package.id          AS package_id,
+       package.name        AS package_name,
+       package.description AS package_description,
+       package.visibility  AS package_visibility,
+       package.created_at  AS package_created_at,
+       package.updated_at  AS package_updated_at,
+       usr.username        AS package_owner_username
 FROM packages package
 JOIN users    usr ON package.owner_id = usr.id
 WHERE name ILIKE '%' || $1 || '%'
@@ -80,19 +86,18 @@ LIMIT $2 OFFSET $3
 
 type FindPackagesParams struct {
 	Column1 pgtype.Text
-	Limit   int32
-	Offset  int32
+	Limit   pgtype.Int4
+	Offset  pgtype.Int4
 }
 
 type FindPackagesRow struct {
-	ID            pgtype.UUID
-	Name          pgtype.Text
-	Description   pgtype.Text
-	Visibility    Visibility
-	OwnerID       pgtype.UUID
-	CreatedAt     pgtype.Timestamptz
-	UpdatedAt     pgtype.Timestamptz
-	OwnerUsername pgtype.Text
+	PackageID            pgtype.UUID
+	PackageName          pgtype.Text
+	PackageDescription   pgtype.Text
+	PackageVisibility    Visibility
+	PackageCreatedAt     pgtype.Timestamptz
+	PackageUpdatedAt     pgtype.Timestamptz
+	PackageOwnerUsername pgtype.Text
 }
 
 func (q *Queries) FindPackages(ctx context.Context, arg FindPackagesParams) ([]FindPackagesRow, error) {
@@ -105,14 +110,13 @@ func (q *Queries) FindPackages(ctx context.Context, arg FindPackagesParams) ([]F
 	for rows.Next() {
 		var i FindPackagesRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Name,
-			&i.Description,
-			&i.Visibility,
-			&i.OwnerID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.OwnerUsername,
+			&i.PackageID,
+			&i.PackageName,
+			&i.PackageDescription,
+			&i.PackageVisibility,
+			&i.PackageCreatedAt,
+			&i.PackageUpdatedAt,
+			&i.PackageOwnerUsername,
 		); err != nil {
 			return nil, err
 		}
@@ -125,43 +129,75 @@ func (q *Queries) FindPackages(ctx context.Context, arg FindPackagesParams) ([]F
 }
 
 const getPackageByID = `-- name: GetPackageByID :one
-SELECT id, name, description, visibility, owner_id, created_at, updated_at
-FROM packages
+SELECT package.id          AS package_id,
+       package.name        AS package_name,
+       package.description AS package_description,
+       package.visibility  AS package_visibility,
+       package.owner_id    AS package_owner_id,
+       package.created_at  AS package_created_at,
+       package.updated_at  AS package_updated_at
+FROM packages package
 WHERE id = $1
 `
 
-func (q *Queries) GetPackageByID(ctx context.Context, id pgtype.UUID) (Package, error) {
+type GetPackageByIDRow struct {
+	PackageID          pgtype.UUID
+	PackageName        pgtype.Text
+	PackageDescription pgtype.Text
+	PackageVisibility  Visibility
+	PackageOwnerID     pgtype.UUID
+	PackageCreatedAt   pgtype.Timestamptz
+	PackageUpdatedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) GetPackageByID(ctx context.Context, id pgtype.UUID) (GetPackageByIDRow, error) {
 	row := q.db.QueryRow(ctx, getPackageByID, id)
-	var i Package
+	var i GetPackageByIDRow
 	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.Visibility,
-		&i.OwnerID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.PackageID,
+		&i.PackageName,
+		&i.PackageDescription,
+		&i.PackageVisibility,
+		&i.PackageOwnerID,
+		&i.PackageCreatedAt,
+		&i.PackageUpdatedAt,
 	)
 	return i, err
 }
 
 const getPackageByName = `-- name: GetPackageByName :one
-SELECT id, name, description, visibility, owner_id, created_at, updated_at
-FROM packages
+SELECT package.id          AS package_id,
+       package.name        AS package_name,
+       package.description AS package_description,
+       package.visibility  AS package_visibility,
+       package.owner_id    AS package_owner_id,
+       package.created_at  AS package_created_at,
+       package.updated_at  AS package_updated_at
+FROM packages package
 WHERE name = $1
 `
 
-func (q *Queries) GetPackageByName(ctx context.Context, name pgtype.Text) (Package, error) {
+type GetPackageByNameRow struct {
+	PackageID          pgtype.UUID
+	PackageName        pgtype.Text
+	PackageDescription pgtype.Text
+	PackageVisibility  Visibility
+	PackageOwnerID     pgtype.UUID
+	PackageCreatedAt   pgtype.Timestamptz
+	PackageUpdatedAt   pgtype.Timestamptz
+}
+
+func (q *Queries) GetPackageByName(ctx context.Context, name pgtype.Text) (GetPackageByNameRow, error) {
 	row := q.db.QueryRow(ctx, getPackageByName, name)
-	var i Package
+	var i GetPackageByNameRow
 	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.Visibility,
-		&i.OwnerID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.PackageID,
+		&i.PackageName,
+		&i.PackageDescription,
+		&i.PackageVisibility,
+		&i.PackageOwnerID,
+		&i.PackageCreatedAt,
+		&i.PackageUpdatedAt,
 	)
 	return i, err
 }

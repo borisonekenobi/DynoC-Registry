@@ -4,23 +4,36 @@ VALUES ($1, $2, $3)
 RETURNING id, created_at, updated_at;
 
 -- name: GetUserByID :one
-SELECT id, username, email, created_at, updated_at
-FROM users
+SELECT usr.id         AS user_id,
+       usr.username   AS user_name,
+       usr.email      AS user_email,
+       usr.created_at AS user_created_at,
+       usr.updated_at AS user_updated_at
+FROM users usr
 WHERE id = $1;
 
 -- name: GetUserByUsername :one
-SELECT id, username, email, created_at, updated_at
-FROM users
+SELECT usr.id         AS user_id,
+       usr.username   AS user_name,
+       usr.email      AS user_email,
+       usr.created_at AS user_created_at,
+       usr.updated_at AS user_updated_at
+FROM users usr
 WHERE username = $1;
 
 -- name: GetUserByEmail :one
-SELECT id, username, email, created_at, updated_at
-FROM users
+SELECT usr.id         AS user_id,
+       usr.username   AS user_name,
+       usr.email      AS user_email,
+       usr.created_at AS user_created_at,
+       usr.updated_at AS user_updated_at
+FROM users usr
 WHERE email = $1;
 
 -- name: GetSecurityInfo :one
-SELECT id, password
-FROM users
+SELECT usr.id       AS user_id,
+       usr.password AS user_password
+FROM users usr
 WHERE username = $1
    OR email = $1;
 

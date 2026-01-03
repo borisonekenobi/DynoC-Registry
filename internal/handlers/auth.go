@@ -36,14 +36,14 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(row.Password.String), []byte(req.Password.String))
+	err = bcrypt.CompareHashAndPassword([]byte(row.UserPassword.String), []byte(req.Password.String))
 	if err != nil {
 		time.Sleep(time.Duration(n) * time.Millisecond)
 		commons.WriteJSON(w, http.StatusNotFound, models.Response{Message: "incorrect username or password"})
 		return
 	}
 
-	token, err := jwt.CreateToken(row.ID)
+	token, err := jwt.CreateToken(row.UserID)
 	if err != nil {
 		commons.WriteJSON(w, http.StatusInternalServerError, models.InternalServerError)
 		return
@@ -79,7 +79,7 @@ func RenewToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.CreateToken(row.ID)
+	token, err := jwt.CreateToken(row.UserID)
 	if err != nil {
 		commons.WriteJSON(w, http.StatusInternalServerError, models.InternalServerError)
 		return

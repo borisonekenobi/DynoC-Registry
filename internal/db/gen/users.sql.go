@@ -48,101 +48,114 @@ func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
 }
 
 const getSecurityInfo = `-- name: GetSecurityInfo :one
-SELECT id, password
-FROM users
+SELECT usr.id       AS user_id,
+       usr.password AS user_password
+FROM users usr
 WHERE username = $1
    OR email = $1
 `
 
 type GetSecurityInfoRow struct {
-	ID       pgtype.UUID
-	Password pgtype.Text
+	UserID       pgtype.UUID
+	UserPassword pgtype.Text
 }
 
 func (q *Queries) GetSecurityInfo(ctx context.Context, username pgtype.Text) (GetSecurityInfoRow, error) {
 	row := q.db.QueryRow(ctx, getSecurityInfo, username)
 	var i GetSecurityInfoRow
-	err := row.Scan(&i.ID, &i.Password)
+	err := row.Scan(&i.UserID, &i.UserPassword)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, created_at, updated_at
-FROM users
+SELECT usr.id         AS user_id,
+       usr.username   AS user_name,
+       usr.email      AS user_email,
+       usr.created_at AS user_created_at,
+       usr.updated_at AS user_updated_at
+FROM users usr
 WHERE email = $1
 `
 
 type GetUserByEmailRow struct {
-	ID        pgtype.UUID
-	Username  pgtype.Text
-	Email     pgtype.Text
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	UserID        pgtype.UUID
+	UserName      pgtype.Text
+	UserEmail     pgtype.Text
+	UserCreatedAt pgtype.Timestamptz
+	UserUpdatedAt pgtype.Timestamptz
 }
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email pgtype.Text) (GetUserByEmailRow, error) {
 	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i GetUserByEmailRow
 	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.UserID,
+		&i.UserName,
+		&i.UserEmail,
+		&i.UserCreatedAt,
+		&i.UserUpdatedAt,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, created_at, updated_at
-FROM users
+SELECT usr.id         AS user_id,
+       usr.username   AS user_name,
+       usr.email      AS user_email,
+       usr.created_at AS user_created_at,
+       usr.updated_at AS user_updated_at
+FROM users usr
 WHERE id = $1
 `
 
 type GetUserByIDRow struct {
-	ID        pgtype.UUID
-	Username  pgtype.Text
-	Email     pgtype.Text
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	UserID        pgtype.UUID
+	UserName      pgtype.Text
+	UserEmail     pgtype.Text
+	UserCreatedAt pgtype.Timestamptz
+	UserUpdatedAt pgtype.Timestamptz
 }
 
 func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (GetUserByIDRow, error) {
 	row := q.db.QueryRow(ctx, getUserByID, id)
 	var i GetUserByIDRow
 	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.UserID,
+		&i.UserName,
+		&i.UserEmail,
+		&i.UserCreatedAt,
+		&i.UserUpdatedAt,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, email, created_at, updated_at
-FROM users
+SELECT usr.id         AS user_id,
+       usr.username   AS user_name,
+       usr.email      AS user_email,
+       usr.created_at AS user_created_at,
+       usr.updated_at AS user_updated_at
+FROM users usr
 WHERE username = $1
 `
 
 type GetUserByUsernameRow struct {
-	ID        pgtype.UUID
-	Username  pgtype.Text
-	Email     pgtype.Text
-	CreatedAt pgtype.Timestamptz
-	UpdatedAt pgtype.Timestamptz
+	UserID        pgtype.UUID
+	UserName      pgtype.Text
+	UserEmail     pgtype.Text
+	UserCreatedAt pgtype.Timestamptz
+	UserUpdatedAt pgtype.Timestamptz
 }
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username pgtype.Text) (GetUserByUsernameRow, error) {
 	row := q.db.QueryRow(ctx, getUserByUsername, username)
 	var i GetUserByUsernameRow
 	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.UserID,
+		&i.UserName,
+		&i.UserEmail,
+		&i.UserCreatedAt,
+		&i.UserUpdatedAt,
 	)
 	return i, err
 }

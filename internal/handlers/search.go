@@ -10,9 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const defaultSkip int32 = 0
-const defaultTake int32 = 50
-
 func FindPackages(w http.ResponseWriter, r *http.Request) {
 	query := pgtype.Text{String: r.URL.Query().Get("q"), Valid: true}
 	if query.String == "" {
@@ -20,18 +17,18 @@ func FindPackages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	skip := defaultSkip
+	skip := commons.DefaultSkip
 	skipParam := r.URL.Query().Get("skip")
 	if skipParam != "" {
-		i, err := strconv.ParseInt(skipParam, 10, 64)
+		i, err := strconv.ParseInt(skipParam, 10, 32)
 		if err != nil || i < 0 {
 			commons.WriteJSON(w, http.StatusBadRequest, models.BadRequestError)
 			return
 		}
-		skip = int32(i)
+		skip = pgtype.Int4{Int32: int32(i), Valid: true}
 	}
 
-	take := defaultTake
+	take := commons.DefaultTake
 	takeParam := r.URL.Query().Get("skip")
 	if takeParam != "" {
 		i, err := strconv.ParseInt(takeParam, 10, 32)
@@ -39,7 +36,7 @@ func FindPackages(w http.ResponseWriter, r *http.Request) {
 			commons.WriteJSON(w, http.StatusBadRequest, models.BadRequestError)
 			return
 		}
-		take = int32(i)
+		take = pgtype.Int4{Int32: int32(i), Valid: true}
 	}
 
 	pool := commons.GetDB(r)
@@ -58,13 +55,12 @@ func FindPackages(w http.ResponseWriter, r *http.Request) {
 	resp := make([]models.PackageResponse, len(rows))
 	for i, row := range rows {
 		resp[i] = models.PackageResponse{
-			ID:          row.ID,
-			Name:        row.Name,
-			Description: row.Description,
-			Visibility:  row.Visibility,
-			Owner:       row.OwnerUsername,
-			CreatedAt:   row.CreatedAt,
-			UpdatedAt:   row.UpdatedAt,
+			Name:        row.PackageName,
+			Description: row.PackageDescription,
+			Visibility:  row.PackageVisibility,
+			Owner:       row.PackageOwnerUsername,
+			CreatedAt:   row.PackageCreatedAt,
+			UpdatedAt:   row.PackageUpdatedAt,
 		}
 	}
 
